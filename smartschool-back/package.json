@@ -1,0 +1,40 @@
+{
+  "name": "smartschool-uy1",
+  "version": "1.0.0",
+  "description": "SmartSchool ORM backend",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/database/seed.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-bouognong/smartschool-uy1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/stefan-bouognong/smartschool-uy1/issues"
+  },
+  "homepage": "https://github.com/stefan-bouognong/smartschool-uy1#readme",
+  "dependencies": {
+    "@kangopenbanking/sdk": "^1.1.2",
+    "axios": "^1.16.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "mysql2": "^3.22.3",
+    "sequelize": "^6.37.8",
+    "pdfkit": "^0.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
