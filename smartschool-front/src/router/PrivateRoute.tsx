@@ -1,21 +1,17 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 
-interface PrivateRouteProps {
-  children: JSX.Element;
-  allowedRoles?: string[];
-}
-
-export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) => {
+export const PrivateRoute = () => {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) return <div className="flex justify-center items-center h-screen">Chargement...</div>;
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Chargement...</div>;
   }
 
-  return children;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Utilise Outlet pour afficher les routes enfants
+  return <Outlet />;
 };
