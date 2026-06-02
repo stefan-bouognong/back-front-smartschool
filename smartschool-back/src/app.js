@@ -13,7 +13,14 @@ const app = express();
 const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
 app.use(morgan(morganFormat));
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // ou '*' pour tous (moins sécurisé)
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,7 +43,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/finance', financeRoutes);
 
 
-const scolariteRoutes = require('./modules/scolarite/scolarite.routes');
+const { router: scolariteRoutes } = require('./modules/scolarite/scolarite.routes');
 // Middlewares globaux
 
 app.use('/api/scolarite', scolariteRoutes);
