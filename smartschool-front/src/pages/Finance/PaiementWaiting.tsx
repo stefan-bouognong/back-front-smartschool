@@ -11,7 +11,6 @@ import {
 
 import {
   checkStatus,
-  validatePayment,
 } from "../../api/finance";
 
 export default function PaiementWaiting() {
@@ -27,11 +26,12 @@ export default function PaiementWaiting() {
 
     const poll = async () => {
       try {
-
+        console.log("Vérification du statut pour la référence:", reference);
         const response = await checkStatus(
           reference!
         );
 
+        console.log("Statut reçu de l'API:", response.data.status);
         const status =
           response.data.status;
 
@@ -44,17 +44,6 @@ export default function PaiementWaiting() {
             intervalRef.current
           );
 
-          await validatePayment({
-            reference: reference!,
-            matricule:
-              location.state.matricule,
-            id_tranche:
-              location.state.id_tranche,
-            montant_verse:
-              location.state.montant,
-            mode_paiement:
-              "Mobile Money",
-          });
 
           navigate(
             "/paiement/succes"

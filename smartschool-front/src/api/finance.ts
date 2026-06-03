@@ -33,7 +33,7 @@ export const validatePayment = async (data: {
 
 export const getStudentByMatricule = async (matricule: string) => {
   const response = await client.get(
-    `/scolarite/etudiant/matricule/${matricule}`
+    `/etudiant/matricule/${matricule}`
   );
 
   return response.data;
