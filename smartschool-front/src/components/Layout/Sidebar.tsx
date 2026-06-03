@@ -21,8 +21,6 @@ const Sidebar = () => {
     { to: '/scolarite/etudiants', icon: FiUsers, label: 'Étudiants' },
     { to: '/scolarite/inscriptions', icon: FiFileText, label: 'Inscriptions' },
     // ADMIN n'a pas accès à la saisie des notes (c'est pour les enseignants)
-    { to: '/finance/tranches', icon: FiDollarSign, label: 'Tranches' },
-    { to: '/finance/paiements', icon: FiDollarSign, label: 'Paiements' },
     { to: '/reporting/releve', icon: FiBarChart2, label: 'Relevé de notes' }, // ADMIN peut télécharger
   ];
 
@@ -36,11 +34,11 @@ const Sidebar = () => {
   const links = role === 'ADMIN' ? adminLinks : enseignantLinks;
 
   return (
-    <div className="w-64 bg-gray-800 text-white h-screen fixed left-0 top-0 flex flex-col">
+    <div className="fixed top-0 left-0 flex flex-col w-64 h-screen text-white bg-gray-800">
       <div className="p-4 text-xl font-bold border-b border-gray-700">
         SmartSchool
       </div>
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav className="flex-1 py-4 overflow-y-auto">
         <ul className="space-y-1">
           {links.map((link) => (
             <li key={link.to}>
@@ -61,7 +59,7 @@ const Sidebar = () => {
       </nav>
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+          <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
             {user?.prenom?.charAt(0)}{user?.nom?.charAt(0)}
           </div>
           <div className="flex-1">
@@ -71,7 +69,7 @@ const Sidebar = () => {
         </div>
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 rounded mt-2 transition"
+          className="flex items-center justify-center w-full gap-2 py-2 mt-2 text-white transition bg-red-600 rounded hover:bg-red-700"
         >
           <FiLogOut /> Déconnexion
         </button>
