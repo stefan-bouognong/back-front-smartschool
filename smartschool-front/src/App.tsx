@@ -24,6 +24,9 @@ import PaiementPage from "./pages/Finance/PaiementPage";
 import PaiementWaiting from "./pages/Finance/PaiementWaiting";
 import PaiementSuccess from "./pages/Finance/PaiementSuccess";
 
+
+// ... imports
+
 function App() {
   return (
     <AuthProvider>
@@ -33,18 +36,9 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/stefanmouope/register" element={<Register />} />
-
-
-              <Route path="/paiement" element={<PaiementPage />} />
-
-              <Route
-                path="/paiement/attente/:reference"
-                element={<PaiementWaiting />}
-              />
-              <Route
-                path="/paiement/succes"
-                element={<PaiementSuccess />}
-              />
+          <Route path="/paiement" element={<PaiementPage />} />
+          <Route path="/paiement/attente/:reference" element={<PaiementWaiting />} />
+          <Route path="/paiement/succes" element={<PaiementSuccess />} />
 
           {/* Routes protégées avec layout principal */}
           <Route element={<PrivateRoute />}>
@@ -68,7 +62,6 @@ function App() {
               
               {/* Module Reporting */}
               <Route path="/reporting/releve" element={<Releve />} />
-
             </Route>
           </Route>
         </Routes>

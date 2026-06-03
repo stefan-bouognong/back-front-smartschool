@@ -1,324 +1,38 @@
-// const { Status } = require("./Cam.service");
-// const { createCharge } = require("./Cam.service");
-// const { PayerTranche} = require("../../database/models/payerTranche.model");
-// const { tranche } = require("../../database/models/tranche.model");
+const service = require('./finance.service');
 
-// const createGatewayCharge = async (req, res) => {
-//   try {
-//     const { matricule, amount, customer_phone } = req.body;
-
-//     //  Validation basique
-//     if (!matricule || !amount || !customer_phone) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "matricule, amount et customer_phone sont requis"
-//       });
-//     }
-
-//     const result = await createCharge({
-//       amount,
-//       customer_phone,
-//     });
-
-//     console.log("Réponse Campay :", result);
-
-//     return res.status(200).json({
-//       // success: true,
-//       data: {
-//         matricule,
-//         ...result
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-
-//     return res.status(500).json({
-//       success: false,
-//       message: error?.response?.data || error.message || "Erreur interne"
-//     });
-//   }
-// };
-
-
-// const getstatus = async (req, res) => {
-//   const {reference} = req.body;
-
-//   try{
-//     const result = await Status(reference);
-//     return res.status(200).json({
-//       success:true,
-//       data: result
-//     })
-//   }catch(error){
-//     console.error(error);
-
-//     return res.status(500).json({
-//       success: false,
-//       message: error?.response?.data || error.message || "Erreur interne"
-//     });
-//   }
-// }
-
-// module.exports = {
-//   createGatewayCharge,
-//   getstatus
-// };
-
-
-const axios = require("axios");
-const sequelize = require("../../config/database");
-
-const { Status, createCharge } = require("./Cam.service");
-
-const PayerTranche = require("../../database/models/payerTranche.model");
-const Tranche = require("../../database/models/tranche.model");
-
-/**
- * Création d'une demande de paiement CAM
- */
-const createGatewayCharge = async (req, res) => {
-  console.log("Création d'une demande de paiement CAM avec les données :", req.body);
+exports.createCharge = async (req, res) => {
   try {
-    const { matricule, amount, customer_phone } = req.body;
-
-    if (!matricule || !amount || !customer_phone) {
-      return res.status(400).json({
-        success: false,
-        message: "matricule, amount et customer_phone sont requis",
-      });
+    const { matricule, amount, customer_phone, id_tranche } = req.body;
+    if (!matricule || !amount || !customer_phone || !id_tranche) {
+      return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
-
-    const result = await createCharge({
-      amount,
-      customer_phone,
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        matricule,
-        ...result,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error?.response?.data ||
-        error.message ||
-        "Erreur interne du serveur",
-    });
+    const result = await service.initierPaiement(matricule, amount, customer_phone, id_tranche);
+    res.status(200).json({ data: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * Vérifier le statut d'un paiement CAM
- */
-const getstatus = async (req, res) => {
-  const { reference } = req.query;
-
+exports.checkStatus = async (req, res) => {
   try {
-    const result = await Status(reference);
-
-    return res.status(200).json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error?.response?.data ||
-        error.message ||
-        "Erreur interne",
-    });
+    const { reference } = req.query;
+    if (!reference) return res.status(400).json({ error: 'Référence requise' });
+    const statusData = await service.verifierStatutPaiement(reference);
+    res.json(statusData);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * Validation et enregistrement du paiement
- */
-const validatePayment = async (req, res) => {
-  const transaction = await sequelize.transaction();
-
+exports.validatePayment = async (req, res) => {
   try {
-    const {
-      reference,
-      matricule,
-      id_tranche,
-      montant_verse,
-      mode_paiement,
-    } = req.body;
-
-    // =========================
-    // Validation des paramètres
-    // =========================
-
-    if (
-      !reference ||
-      !matricule ||
-      !id_tranche ||
-      !montant_verse ||
-      !mode_paiement
-    ) {
-      await transaction.rollback();
-
-      return res.status(400).json({
-        success: false,
-        message:
-          "reference, matricule, id_tranche, montant_verse et mode_paiement sont requis",
-      });
+    const { reference, matricule, id_tranche, montant_verse, mode_paiement } = req.body;
+    if (!reference || !matricule || !id_tranche || !montant_verse || !mode_paiement) {
+      return res.status(400).json({ error: 'Champs manquants' });
     }
-
-    if (montant_verse <= 0) {
-      await transaction.rollback();
-
-      return res.status(400).json({
-        success: false,
-        message: "Le montant doit être supérieur à zéro",
-      });
-    }
-
-    // =========================
-    // Vérification CAM
-    // =========================
-
-    const paymentStatus = await Status(reference);
-
-    if (
-      paymentStatus.status !== "SUCCESS" &&
-      paymentStatus.status !== "SUCCESSFUL"
-    ) {
-      await transaction.rollback();
-
-      return res.status(400).json({
-        success: false,
-        message: "Le paiement n'a pas été validé",
-        status: paymentStatus.status,
-      });
-    }
-
-    // =========================
-    // Recherche de l'étudiant
-    // =========================
-
-    const response = await axios.get(
-      `http://localhost:5000/api/scolarite/etudiant/matricule/${matricule}`
-    );
-
-    const etudiant = response.data;
-
-    if (!etudiant) {
-      await transaction.rollback();
-
-      return res.status(404).json({
-        success: false,
-        message: "Étudiant introuvable",
-      });
-    }
-
-    if (!etudiant.id_inscription) {
-      await transaction.rollback();
-
-      return res.status(400).json({
-        success: false,
-        message: "Aucune inscription trouvée pour cet étudiant",
-      });
-    }
-
-    // =========================
-    // Vérification tranche
-    // =========================
-
-    const tranche = await Tranche.findByPk(id_tranche);
-
-    if (!tranche) {
-      await transaction.rollback();
-
-      return res.status(404).json({
-        success: false,
-        message: "Tranche introuvable",
-      });
-    }
-
-    // =========================
-    // Vérification doublon
-    // =========================
-
-    const existingPayment = await PayerTranche.findOne({
-      where: {
-        id_inscription: etudiant.id_inscription,
-        id_tranche,
-      },
-      transaction,
-    });
-
-    if (existingPayment) {
-      await transaction.rollback();
-
-      return res.status(409).json({
-        success: false,
-        message: "Cette tranche a déjà été payée",
-      });
-    }
-
-    // =========================
-    // Vérification montant
-    // =========================
-
-    if (montant_verse < tranche.montant_exigible) {
-      await transaction.rollback();
-
-      return res.status(400).json({
-        success: false,
-        message: `Le montant minimum attendu est ${tranche.montant_exigible} FCFA`,
-      });
-    }
-
-    // =========================
-    // Enregistrement
-    // =========================
-
-    const paiement = await PayerTranche.create(
-      {
-        id_inscription: etudiant.id_inscription,
-        id_tranche,
-        date_paiement: new Date(),
-        montant_verse,
-        mode_paiement,
-      },
-      { transaction }
-    );
-
-    await transaction.commit();
-
-    return res.status(201).json({
-      success: true,
-      message: "Paiement enregistré avec succès",
-      data: paiement,
-    });
-  } catch (error) {
-    await transaction.rollback();
-
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error?.response?.data?.message ||
-        error.message ||
-        "Erreur interne du serveur",
-    });
+    const result = await service.validerPaiement(reference, matricule, id_tranche, montant_verse, mode_paiement);
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-};
-
-module.exports = {
-  createGatewayCharge,
-  getstatus,
-  validatePayment,
 };

@@ -1,92 +1,58 @@
-import {
-  useEffect,
-  useRef,
-} from "react";
-
-import {
-  useNavigate,
-  useParams,
-  useLocation,
-} from "react-router-dom";
-
-import {
-  checkStatus,
-} from "../../api/finance";
+import { useEffect, useRef } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { checkStatus, validatePayment } from "../../api/finance";
 
 export default function PaiementWaiting() {
   const { reference } = useParams();
-
   const navigate = useNavigate();
-
   const location = useLocation();
-
   const intervalRef = useRef<number>();
+  const validatedRef = useRef(false);
 
   useEffect(() => {
+    const { matricule, montant, id_tranche } = location.state || {};
 
     const poll = async () => {
       try {
-        console.log("Vérification du statut pour la référence:", reference);
-        const response = await checkStatus(
-          reference!
-        );
+        const response = await checkStatus(reference!); // response = déjà l'objet final
+        const status = response?.status; // ✅ plus de .data
+        console.log("Statut reçu:", status);
 
-        console.log("Statut reçu de l'API:", response.data.status);
-        const status =
-          response.data.status;
-
-        if (
-          status === "SUCCESS" ||
-          status === "SUCCESSFUL"
-        ) {
-
-          clearInterval(
-            intervalRef.current
-          );
-
-
-          navigate(
-            "/paiement/succes"
-          );
+        if (status === "SUCCESS" || status === "SUCCESSFUL") {
+          clearInterval(intervalRef.current);
+          if (!validatedRef.current && matricule && id_tranche && montant) {
+            validatedRef.current = true;
+            await validatePayment({
+              reference: reference!,
+              matricule,
+              id_tranche: Number(id_tranche),
+              montant_verse: Number(montant),
+              mode_paiement: "CamPay Mobile"
+            });
+          }
+          navigate("/paiement/succes");
+        } else if (status === "FAILED" || status === "CANCELLED") {
+          clearInterval(intervalRef.current);
+          alert("Le paiement a échoué. Veuillez réessayer.");
+          navigate("/paiement");
         }
       } catch (error) {
-        console.error(error);
+        console.error("Erreur lors de la vérification:", error);
       }
     };
 
     poll();
-
-    intervalRef.current =
-      window.setInterval(
-        poll,
-        5000
-      );
-
-    return () => {
-      clearInterval(
-        intervalRef.current
-      );
-    };
-  }, []);
+    intervalRef.current = window.setInterval(poll, 5000);
+    return () => clearInterval(intervalRef.current);
+  }, [reference, location.state, navigate]);
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-slate-100">
-      <div className="bg-white p-10 rounded-xl shadow-xl text-center">
-
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4" />
-
-        <h2 className="text-2xl font-bold">
-          Paiement en cours
-        </h2>
-
-        <p className="text-gray-600 mt-2">
-          Nous vérifions votre paiement...
-        </p>
-
-        <p className="mt-4 text-sm">
-          Référence : {reference}
-        </p>
-
+    <div className="flex items-center justify-center min-h-screen bg-slate-100">
+      <div className="p-10 text-center bg-white shadow-xl rounded-xl">
+        <div className="w-16 h-16 mx-auto mb-4 border-b-4 border-blue-600 rounded-full animate-spin" />
+        <h2 className="text-2xl font-bold">Paiement en cours</h2>
+        <p className="mt-2 text-gray-600">Nous vérifions votre paiement...</p>
+        <p className="mt-4 text-sm">Référence : {reference}</p>
       </div>
     </div>
   );

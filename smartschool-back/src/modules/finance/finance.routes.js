@@ -1,14 +1,10 @@
 const express = require('express');
-// const { createGatewayChargeController } = require('./finance.controller');
-
 const router = express.Router();
+const controller = require('./finance.controller');
 
-// router.post('/gateway-charges-router', createGatewayChargeController);
 
-const { createGatewayCharge,getstatus,validatePayment} = require('./finance.controller');
-
-router.post('/charge', createGatewayCharge);
-router.get('/status', getstatus);
-router.post("/validate", validatePayment);
+router.post('/charge', controller.createCharge);
+router.get('/status', controller.checkStatus);
+router.post('/validate', controller.validatePayment);
 
 module.exports = router;
