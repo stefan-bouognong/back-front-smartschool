@@ -4,22 +4,22 @@ const { sequelize } = require("./database/models");
 
 const startServer = async () => {
   try {
-    // 🔥 Connexion DB
+    //  Connexion DB
     // await sequelize.authenticate();
-    console.log("📦 Connexion à la base OK");
+    console.log(" Connexion à la base OK");
 
-    // 🔥 Création des tables automatiquement
+    //  Création des tables automatiquement
     await sequelize.sync({});
-    console.log("✅ Tables synchronisées");
+    console.log(" Tables synchronisées");
     // await sequelize.sync({ alter: true });
-    // console.log("✅ Tables synchronisées");
+    // console.log(" Tables synchronisées");
 
-    // 🚀 Lancement serveur
+    //  Lancement serveur
     app.listen(config.port, () => {
-      console.log(`🚀 Server running on port ${config.port}`);
+      console.log(` Server running on port ${config.port}`);
     });
   } catch (error) {
-    console.error("❌ Erreur démarrage:", error);
+    console.error(" Erreur démarrage:", error);
   }
 };
 

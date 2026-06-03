@@ -18,12 +18,12 @@ function pipePdf(res, doc, filename) {
   doc.end();
 }
 
-// ─── En-tête officielle bilingue ─────────────────────────────────────────────
-// nomEtablissement est maintenant dynamique via reportData.inscription.etablissement
-function drawOfficialHeader(doc, nomEtablissement, titreDocument) {
+// ─── En-tête officielle bilingue (Université, Faculté, Département) ─────────
+function drawOfficialHeader(doc, titreDocument) {
   const pageW = doc.page.width;
   const margin = 40;
 
+  // Ligne 1 : République du Cameroun (gauche) / Republic of Cameroon (droite)
   doc.fillColor("#000000").font("Helvetica-Bold").fontSize(9);
   doc.text("RÉPUBLIQUE DU CAMEROUN", margin, 20, { align: "left" });
   doc.font("Helvetica").fontSize(7);
@@ -38,34 +38,49 @@ function drawOfficialHeader(doc, nomEtablissement, titreDocument) {
     align: "right",
   });
 
+  // Ligne 2 : Université (français à gauche, anglais à droite)
+  doc.font("Helvetica-Bold").fontSize(11);
+  doc.text("UNIVERSITÉ DE YAOUNDÉ I", margin, 45, { align: "left" });
+  doc.text("UNIVERSITY OF YAOUNDÉ I", pageW - margin - 150, 45, {
+    align: "right",
+  });
+
+  // Ligne 3 : Faculté
+  doc.font("Helvetica-Bold").fontSize(10);
+  doc.text("FACULTÉ DES SCIENCES", margin, 62, { align: "left" });
+  doc.text("FACULTY OF SCIENCE", pageW - margin - 150, 62, { align: "right" });
+
+  // Ligne 4 : Département
+  doc.font("Helvetica-Bold").fontSize(10);
+  doc.text("DÉPARTEMENT D'INFORMATIQUE", margin, 79, { align: "left" });
+  doc.text("DEPARTMENT OF COMPUTER SCIENCE", pageW - margin - 150, 79, {
+    align: "right",
+  });
+
+  // Trait séparateur
   doc
-    .moveTo(margin, 44)
-    .lineTo(pageW - margin, 44)
-    .lineWidth(0.3)
+    .moveTo(margin, 98)
+    .lineTo(pageW - margin, 98)
+    .lineWidth(0.5)
     .stroke("#CCCCCC");
 
-  doc.fillColor("#000000").font("Helvetica").fontSize(14);
-  doc.text(nomEtablissement, margin, 55, {
-    align: "center",
-    width: pageW - margin * 2,
-  });
-
-  doc.font("Helvetica-Bold").fontSize(16);
-  doc.text(titreDocument, margin, 85, {
+  // Titre du document (Relevé de notes / Transcript)
+  doc.fillColor("#000000").font("Helvetica-Bold").fontSize(16);
+  doc.text(titreDocument, margin, 115, {
     align: "center",
     width: pageW - margin * 2,
   });
 
   doc
-    .moveTo(margin, 108)
-    .lineTo(pageW - margin, 108)
+    .moveTo(margin, 138)
+    .lineTo(pageW - margin, 138)
     .lineWidth(0.5)
     .stroke("#000000");
 
-  doc.y = 130;
+  doc.y = 160;
 }
 
-// ─── Fiche étudiant ──────────────────────────────────────────────────────────
+// ─── Fiche étudiant (inchangée, mais on ajuste les positions Y) ────────────
 function drawStudentBox(doc, reportData) {
   const margin = 40;
   let y = doc.y;
@@ -124,7 +139,7 @@ function drawStudentBox(doc, reportData) {
   doc.y = y + 30;
 }
 
-// ─── Tableau des notes ───────────────────────────────────────────────────────
+// ─── Tableau des notes (inchangé) ──────────────────────────────────────────
 function drawNotesTable(doc, notes) {
   const margin = 40;
   let y = doc.y;
@@ -194,17 +209,15 @@ function drawNotesTable(doc, notes) {
   doc.y = y + tableH + 25;
 }
 
-// ─── Bilan récapitulatif ─────────────────────────────────────────────────────
+// ─── Bilan récapitulatif (inchangé) ────────────────────────────────────────
 function drawSummary(doc, summary, rang) {
   const margin = 40;
   const pageW = doc.page.width;
   let y = doc.y;
 
-  // Colonne gauche
   const colGauche = margin;
   const colDroite = pageW - margin - 150;
 
-  // Ligne 1: Crédits capitalisés (gauche)
   doc.font("Helvetica").fontSize(9);
   doc.text("Crédits capitalisés : ", colGauche, y, { continued: true });
   doc.font("Helvetica-Bold").fontSize(9);
@@ -216,7 +229,6 @@ function drawSummary(doc, summary, rang) {
   doc.font("Helvetica").fontSize(9);
   doc.text(" %)", { continued: false });
 
-  // Ligne 1 (droite): Moyenne Générale
   doc.font("Helvetica").fontSize(9);
   doc.text("Moyenne Générale : ", colDroite, y, { continued: true });
   doc.font("Helvetica-Bold").fontSize(9);
@@ -228,7 +240,6 @@ function drawSummary(doc, summary, rang) {
 
   y += 18;
 
-  // Ligne 2: MGP (gauche)
   doc.font("Helvetica").fontSize(9);
   doc.text("Moyenne Générale Pondérée (MGP) : ", colGauche, y, {
     continued: true,
@@ -238,7 +249,6 @@ function drawSummary(doc, summary, rang) {
   doc.font("Helvetica").fontSize(9);
   doc.text(" / 4", { continued: false });
 
-  // Ligne 2 (droite): Rang
   if (rang) {
     doc.font("Helvetica").fontSize(9);
     doc.text("Rang : ", colDroite, y, { continued: true });
@@ -248,7 +258,6 @@ function drawSummary(doc, summary, rang) {
 
   y += 18;
 
-  // Ligne 3: Décision (gauche)
   doc.font("Helvetica").fontSize(9);
   doc.text("Décision : ", colGauche, y, { continued: true });
   if (summary.estAdmis) {
@@ -260,7 +269,7 @@ function drawSummary(doc, summary, rang) {
   doc.y = y + 30;
 }
 
-// ─── Pied de page avec signatures ────────────────────────────────────────────
+// ─── Pied de page avec signatures (inchangé) ────────────────────────────────
 function drawFooter(doc, presidentJury = "Le Président du Jury") {
   const pageW = doc.page.width;
   const margin = 40;
@@ -316,7 +325,7 @@ function drawFooter(doc, presidentJury = "Le Président du Jury") {
   );
 }
 
-// ─── Génération du relevé de notes ───────────────────────────────────────────
+// ─── Génération du relevé de notes (appel modifié) ─────────────────────────
 function generateRelevePdf(reportData, res) {
   const doc = new PDFDocument({
     size: "A4",
@@ -328,9 +337,8 @@ function generateRelevePdf(reportData, res) {
     },
   });
 
-  const nomEtablissement = reportData.inscription.etablissement;
-
-  drawOfficialHeader(doc, nomEtablissement, "RELEVÉ DE NOTES / TRANSCRIPT");
+  // On utilise la nouvelle fonction d'en-tête (sans paramètre d'établissement)
+  drawOfficialHeader(doc, "RELEVÉ DE NOTES / TRANSCRIPT");
   drawStudentBox(doc, reportData);
 
   const notes = reportData.notes || [];
@@ -353,117 +361,8 @@ function generateRelevePdf(reportData, res) {
   pipePdf(res, doc, `releve_${reportData.student.matricule}.pdf`);
 }
 
-// ─── Génération du certificat de scolarité ───────────────────────────────────
-// function generateCertificatePdf(reportData, res) {
-//   const doc = new PDFDocument({
-//     size: "A4",
-//     margin: 40,
-//     info: {
-//       Title: "Certificat de Scolarité",
-//       Author: "Université de Yaoundé I",
-//       Subject: `Certificat de scolarité – ${reportData.student.matricule}`,
-//     },
-//   });
-
-//   const pageW = doc.page.width;
-//   const margin = 40;
-//   const s = reportData.student;
-//   const i = reportData.inscription;
-//   const p = reportData.payments;
-
-//   const nomEtablissement = i.etablissement || "UNIVERSITÉ DE YAOUNDÉ I";
-
-//   // ── En-tête
-//   drawOfficialHeader(doc, nomEtablissement, "CERTIFICAT DE SCOLARITÉ");
-
-//   // ── Accroche officielle
-//   doc.moveDown(0.5);
-//   doc.font("Helvetica-Bold").fontSize(10).fillColor("#000000");
-//   doc.text(
-//     `Le Chef du ${i.departement || "N/A"} de la ${nomEtablissement}`,
-//     margin,
-//     doc.y,
-//     { align: "center", width: pageW - margin * 2 },
-//   );
-//   doc.moveDown(0.3);
-//   doc.font("Helvetica").fontSize(9);
-//   doc.text("certifie que l'étudiant(e) :", margin, doc.y, {
-//     align: "center",
-//     width: pageW - margin * 2,
-//   });
-
-//   // ── Encadré identité étudiant
-//   doc.moveDown(0.6);
-//   const boxY = doc.y;
-//   const boxW = pageW - margin * 2 - 80;
-//   const boxX = margin + 40;
-//   const boxH = 62;
-
-//   doc.rect(boxX, boxY, boxW, boxH).stroke("#000000");
-
-//   doc.font("Helvetica-Bold").fontSize(13).fillColor("#000000");
-//   doc.text(`${s.nom.toUpperCase()} ${s.prenom}`, boxX, boxY + 10, {
-//     width: boxW,
-//     align: "center",
-//   });
-
-//   doc.font("Helvetica").fontSize(9);
-//   doc.text(
-//     `Matricule : ${s.matricule}     |     Né(e) le : ${formatDate(s.date_naissance)}`,
-//     boxX,
-//     boxY + 30,
-//     { width: boxW, align: "center" },
-//   );
-
-//   doc.font("Helvetica-Bold").fontSize(9);
-//   doc.text(
-//     `${i.departement || "N/A"}   –   ${i.niveau || "N/A"}`,
-//     boxX,
-//     boxY + 48,
-//     { width: boxW, align: "center" },
-//   );
-
-//   doc.y = boxY + boxH + 20;
-
-//   // ── Corps du certificat
-//   doc.font("Helvetica").fontSize(10).fillColor("#000000").lineGap(5);
-//   doc.text(
-//     `est régulièrement inscrit(e) en ${nomEtablissement} pour l'année académique ${i.annee_scolaire || "N/A"}.`,
-//     margin,
-//     doc.y,
-//     { width: pageW - margin * 2, align: "justify" },
-//   );
-
-//   doc.moveDown(0.6);
-//   doc.text(
-//     "Le présent certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit, notamment dans toute démarche administrative, bancaire ou académique.",
-//     margin,
-//     doc.y,
-//     { width: pageW - margin * 2, align: "justify" },
-//   );
-
-//   // ── Statut paiement
-//   doc.moveDown(0.8);
-//   const statusLabel = p.isEligible ? "À JOUR" : "INSUFFISANT";
-//   const statusColor = p.isEligible ? "#1A7A1A" : "#CC0000";
-
-//   doc.font("Helvetica").fontSize(9).fillColor("#000000");
-//   doc.text("Statut de la scolarité : ", margin, doc.y, { continued: true });
-//   doc.font("Helvetica-Bold").fillColor(statusColor).text(statusLabel);
-//   doc.fillColor("#000000");
-
-//   // ── Pied de page (réutilise le même footer que le relevé)
-//   doc.fillColor("#000000");
-//   drawFooter(doc, "Le Président du Jury");
-
-//   doc.moveDown(0.4);
-//   doc.font("Helvetica").fontSize(8).fillColor("#555555");
-//   doc.text(`Document imprimé le ${formatDate(new Date())}`, margin, doc.y, {
-//     align: "center",
-//   });
-
-//   pipePdf(res, doc, `certificat_${s.matricule || s.id_etudiant}.pdf`);
-// }
+// ─── (Optionnel) Certificat de scolarité (commenté, inchangé) ──────────────
+// ...
 
 module.exports = {
   generateRelevePdf,

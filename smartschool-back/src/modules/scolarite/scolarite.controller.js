@@ -44,3 +44,26 @@ exports.deleteInscription = async(req,res) => {
         res.status(404).json({error:err.message});
     }
 };
+
+exports.getEtudiantByMatricule = async (req, res) => {
+  try {
+    const etudiant = await service.getEtudiantByMatricule(req.params.matricule);
+    if (!etudiant) return res.status(404).json({ error: 'Étudiant non trouvé' });
+    res.json(etudiant);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const { Etudiant, Inscription, Niveau, Annee } = require('../../database/models');
+
+exports.getAllEtudiants = async (req, res) => {
+  try {
+    const etudiants = await Etudiant.findAll({
+      include: [{ model: Inscription, include: [Niveau, Annee] }]
+    });
+    res.json(etudiants);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

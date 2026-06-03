@@ -20,17 +20,17 @@ const Sidebar = () => {
     { to: '/admin/enseignants', icon: FiUserCheck, label: 'Enseignants' },
     { to: '/scolarite/etudiants', icon: FiUsers, label: 'Étudiants' },
     { to: '/scolarite/inscriptions', icon: FiFileText, label: 'Inscriptions' },
-    { to: '/scolarite/notes', icon: FiFileText, label: 'Notes' },
+    // ADMIN n'a pas accès à la saisie des notes (c'est pour les enseignants)
     { to: '/finance/tranches', icon: FiDollarSign, label: 'Tranches' },
     { to: '/finance/paiements', icon: FiDollarSign, label: 'Paiements' },
-    { to: '/reporting', icon: FiBarChart2, label: 'Rapports' },
+    { to: '/reporting/releve', icon: FiBarChart2, label: 'Relevé de notes' }, // ADMIN peut télécharger
   ];
 
   const enseignantLinks = [
     { to: '/dashboard', icon: FiHome, label: 'Dashboard' },
     { to: '/scolarite/etudiants', icon: FiUsers, label: 'Étudiants' },
-    { to: '/scolarite/notes', icon: FiFileText, label: 'Saisie notes' },
-    { to: '/reporting', icon: FiBarChart2, label: 'Rapports' },
+    { to: '/academique/notes', icon: FiFileText, label: 'Saisie notes' },
+    // ENSEIGNANT n'a pas accès au relevé de notes (seul ADMIN)
   ];
 
   const links = role === 'ADMIN' ? adminLinks : enseignantLinks;

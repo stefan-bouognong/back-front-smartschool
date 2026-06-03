@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('./academique.controller');
-// const auth = require('../auth/auth.middleware');
+const auth = require('../auth/auth.middleware');  // Assurez-vous que le chemin est correct
 
-// router.use(auth);
+router.use(auth);   // ← TOUS les endpoints nécessitent une authentification
 
 router.post('/ue', controller.creerUE);
 router.get('/ue', controller.listerUEs);

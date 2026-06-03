@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
-import { FaDownload } from 'react-icons/fa'; // Icône de téléchargement
+import { FaDownload } from 'react-icons/fa';
 
 const Home = () => {
   const { user } = useAuth();
@@ -35,9 +35,12 @@ const Home = () => {
           </h1>
           <p className="text-xl text-gray-600 mb-8">de l'Université de Yaoundé 1</p>
           <div className="flex justify-center gap-4">
-            <button className="bg-green-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-green-700 transition flex items-center gap-2">
-              Payer ses DU
-            </button>
+            <Link
+            to="/paiement"
+            className="bg-green-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-green-700 transition"
+            >
+            Payer ses DU
+            </Link>
             <button className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2">
               <FaDownload /> Télécharger son Reçu
             </button>

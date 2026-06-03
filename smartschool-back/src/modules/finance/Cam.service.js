@@ -7,6 +7,7 @@ const API_ACCESSTOKEN = process.env.API_ACCESSTOKEN;
 
 const createCharge = async ({ amount, customer_phone }) => {
   try {
+    console.log("Envoi de la requête à Campay avec les données :", { amount, customer_phone });
     const response = await axios.post(
       `${BASE_URL}/collect/`,
       {

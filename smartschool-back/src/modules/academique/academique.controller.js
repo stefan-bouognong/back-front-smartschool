@@ -1,5 +1,5 @@
 const service = require('./academique.service');
-
+const { Utilisateur, Enseignant } = require('../../database/models');
 exports.creerUE = async (req, res) => {
   try {
     const ueCree = await service.creerUE(req.body);
@@ -32,9 +32,14 @@ exports.obtenirUEParId = async (req, res) => {
 
 exports.creerNote = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ erreur: 'Non authentifié' });
+    }
+    const utilisateur = req.user;
     const donneesNote = {
       ...req.body,
-      id_enseignant: req.user.id_enseignant || req.body.id_enseignant
+      id_utilisateur: utilisateur.id,
+      role: utilisateur.role
     };
     const noteCree = await service.creerNote(donneesNote);
     res.status(201).json(noteCree);
@@ -71,12 +76,22 @@ exports.obtenirNoteParId = async (req, res) => {
 
 exports.listerNotesPourEnseignant = async (req, res) => {
   try {
-    const idEnseignant = req.user.id_enseignant;
-    if (!idEnseignant) {
-      return res.status(403).json({ message: 'Accès réservé aux enseignants' });
+    if (!req.user) return res.status(401).json({ message: 'Non authentifié' });
+    
+    let idEnseignant = req.user.id_enseignant;
+    // Si le token ne contient pas id_enseignant, on le cherche en base
+    if (!idEnseignant && req.user.id) {
+      const utilisateur = await Utilisateur.findByPk(req.user.id, {
+        include: [{ model: Enseignant }]
+      });
+      if (utilisateur && utilisateur.Enseignant) {
+        idEnseignant = utilisateur.Enseignant.id_enseignant;
+      }
     }
-
-    const notes = await service.obtenirNotesPourEnseignant(idEnseignant);
+    if (!idEnseignant) {
+      return res.status(403).json({ message: 'Aucun enseignant associé à cet utilisateur' });
+    }
+    const notes = await service.obtenirNotes({ id_enseignant: idEnseignant });
     res.json(notes);
   } catch (err) {
     res.status(500).json({ erreur: err.message });

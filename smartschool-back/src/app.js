@@ -33,13 +33,17 @@ app.use('/api/auth', require('./modules/auth/auth.routes'));
 const adminRoutes = require('./modules/admin/admin.routes');
 app.use('/api/admin', adminRoutes);
 
-app.use('/finance', financeRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/reporting', reportingRoutes);
 
 
 const scolariteRoutes = require('./modules/scolarite/scolarite.routes');
 // Middlewares globaux
 
 app.use('/api/scolarite', scolariteRoutes);
+
+const TrancheRoutes = require('./modules/finance/tranche.routes');
+app.use('/api/tranches', TrancheRoutes);
 
 // Route test
 app.get("/", (req, res) => {
