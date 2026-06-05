@@ -1,20 +1,20 @@
 import client from './client';
 
-// Types
 export interface Etudiant {
   id_etudiant: number;
+  matricule: string;
   nom_etud: string;
   prenom_etud: string;
   email: string;
+  date_naissance?: string;
+  Inscriptions?: Inscription[];
 }
 
 export interface Niveau {
   id_niveau: number;
   libelle_niveau: string;
   id_departement: number;
-  Departement?: {
-    nom_dept: string;
-  };
+  Departement?: { nom_dept: string };
 }
 
 export interface AnneeAcademique {
@@ -22,9 +22,17 @@ export interface AnneeAcademique {
   libelle_annee: string;
 }
 
+export interface PayerTranche {
+  id_inscription: number;
+  id_tranche: number;
+  date_paiement: string;
+  montant_verse: number;
+  mode_paiement: string;
+  Tranche?: { id_tranche: number; libelle_tranche: string };
+}
+
 export interface Inscription {
   id_inscription: number;
-  matricule: string;
   date_inscription: string;
   statut_paiement: boolean;
   id_etudiant: number;
@@ -32,7 +40,8 @@ export interface Inscription {
   id_niveau: number;
   Etudiant?: Etudiant;
   Niveau?: Niveau;
-  anne?: AnneeAcademique;
+  Annee?: AnneeAcademique;
+  PayerTranches?: PayerTranche[];
 }
 
 export interface CreateInscriptionData {
@@ -42,9 +51,9 @@ export interface CreateInscriptionData {
   filiere: string;
   niveau: string;
   anneeLibelle?: string;
+  date_naissance?: string;
 }
 
-// API calls
 export const createInscription = (data: CreateInscriptionData) =>
   client.post<Inscription>('/scolarite/inscription', data);
 

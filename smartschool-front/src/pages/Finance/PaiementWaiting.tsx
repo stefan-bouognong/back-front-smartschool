@@ -14,22 +14,32 @@ export default function PaiementWaiting() {
 
     const poll = async () => {
       try {
-        const response = await checkStatus(reference!); // response = déjà l'objet final
-        const status = response?.status; // ✅ plus de .data
-        console.log("Statut reçu:", status);
+        const response = await checkStatus(reference!);
+        const status = response?.status;
 
         if (status === "SUCCESS" || status === "SUCCESSFUL") {
           clearInterval(intervalRef.current);
+
           if (!validatedRef.current && matricule && id_tranche && montant) {
             validatedRef.current = true;
-            await validatePayment({
-              reference: reference!,
-              matricule,
-              id_tranche: Number(id_tranche),
-              montant_verse: Number(montant),
-              mode_paiement: "CamPay Mobile"
-            });
+            try {
+              await validatePayment({
+                reference: reference!,
+                matricule,
+                id_tranche: Number(id_tranche),
+                montant_verse: Number(montant),
+                mode_paiement: "CamPay Mobile"
+              });
+              navigate("/paiement/succes");
+            } catch (validationError: unknown) {
+              const err = validationError as { response?: { data?: { error?: string } } };
+              const msg = err.response?.data?.error || "Erreur lors de l'enregistrement du paiement";
+              alert(`Le paiement a été reçu mais n'a pas pu être enregistré : ${msg}. Contactez l'administration.`);
+              navigate("/paiement");
+            }
+            return;
           }
+
           navigate("/paiement/succes");
         } else if (status === "FAILED" || status === "CANCELLED") {
           clearInterval(intervalRef.current);

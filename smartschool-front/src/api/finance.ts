@@ -4,6 +4,7 @@ export const createCharge = async (data: {
   matricule: string;
   amount: number;
   customer_phone: string;
+  id_tranche: number;
 }) => {
   const response = await client.post("/finance/charge", data);
   return response.data;

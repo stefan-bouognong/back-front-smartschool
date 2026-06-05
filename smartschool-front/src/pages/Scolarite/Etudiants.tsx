@@ -1,31 +1,17 @@
 import { useState, useEffect } from 'react';
-import client from '../../api/client';
-
-interface Etudiant {
-  id_etudiant: number;
-  matricule: string;
-  nom_etud: string;
-  prenom_etud: string;
-  email: string;
-  Inscriptions?: any[];
-}
+import { getAllEtudiants, type Etudiant, type Inscription } from '../../api/scolarite';
+import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
 const Etudiants = () => {
   const [etudiants, setEtudiants] = useState<Etudiant[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filtered, setFiltered] = useState<Etudiant[]>([]);
-  const [selected, setSelected] = useState<Etudiant | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    loadEtudiants();
-  }, []);
 
   const loadEtudiants = async () => {
     setLoading(true);
     try {
-      const res = await client.get('/scolarite/etudiants');
+      const res = await getAllEtudiants();
       setEtudiants(res.data);
       setFiltered(res.data);
     } catch (err) {
@@ -36,37 +22,48 @@ const Etudiants = () => {
   };
 
   useEffect(() => {
-    if (!searchTerm) {
+    loadEtudiants();
+  }, []);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
       setFiltered(etudiants);
     } else {
       const term = searchTerm.toLowerCase();
-      const filteredList = etudiants.filter(
-        e => e.matricule?.toLowerCase().includes(term) ||
-             e.nom_etud?.toLowerCase().includes(term) ||
-             e.prenom_etud?.toLowerCase().includes(term) ||
-             e.email?.toLowerCase().includes(term)
-      );
-      setFiltered(filteredList);
+      setFiltered(etudiants.filter(e =>
+        e.matricule?.toLowerCase().includes(term) ||
+        e.nom_etud?.toLowerCase().includes(term) ||
+        e.prenom_etud?.toLowerCase().includes(term) ||
+        e.email?.toLowerCase().includes(term)
+      ));
     }
   }, [searchTerm, etudiants]);
 
-  const handleViewDetails = (etudiant: Etudiant) => {
-    setSelected(etudiant);
-    setModalOpen(true);
+  const getPaiementIcon = (inscription: Inscription, trancheId: number) => {
+    const tranches = inscription.PayerTranches ?? [];
+    const paye = tranches.some(pt => Number(pt.id_tranche) === trancheId);
+    return paye ? <FaCheckCircle className="text-lg text-green-600" /> : <FaTimesCircle className="text-lg text-red-600" />;
   };
+
+  // Aplatir les inscriptions pour afficher une ligne par inscription
+  const inscriptionsList = filtered.flatMap(etudiant =>
+    (etudiant.Inscriptions || []).map(inscription => ({
+      ...inscription,
+      etudiant
+    }))
+  );
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Étudiants</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Étudiants et inscriptions</h1>
       </div>
 
-      {/* Recherche */}
-      <div className="bg-white p-4 rounded shadow mb-6">
+      <div className="p-4 mb-6 bg-white rounded shadow">
         <input
           type="text"
           placeholder="Rechercher par matricule, nom, prénom ou email..."
-          className="w-full border rounded px-3 py-2"
+          className="w-full px-3 py-2 border rounded"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -75,68 +72,42 @@ const Etudiants = () => {
       {loading ? (
         <p className="text-center">Chargement...</p>
       ) : (
-        <div className="bg-white rounded shadow overflow-x-auto">
+        <div className="overflow-x-auto bg-white rounded shadow">
           <table className="min-w-full border">
             <thead className="bg-gray-100">
               <tr>
-                <th className="border p-2">Matricule</th>
-                <th className="border p-2">Nom complet</th>
-                <th className="border p-2">Email</th>
-                <th className="border p-2">Actions</th>
+                <th className="p-2 border">Matricule</th>
+                <th className="p-2 border">Nom complet</th>
+                <th className="p-2 border">Email</th>
+                <th className="p-2 border">Année académique</th>
+                <th className="p-2 border">Niveau</th>
+                <th className="p-2 border">1ʳᵉ tranche</th>
+                <th className="p-2 border">2ᵉ tranche</th>
+                <th className="p-2 border">Totalité</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(etudiant => (
-                <tr key={etudiant.id_etudiant}>
-                  <td className="border p-2">{etudiant.matricule || '-'}</td>
-                  <td className="border p-2">{etudiant.prenom_etud} {etudiant.nom_etud}</td>
-                  <td className="border p-2">{etudiant.email}</td>
-                  <td className="border p-2">
-                    <button
-                      onClick={() => handleViewDetails(etudiant)}
-                      className="bg-blue-600 text-white px-2 py-1 rounded"
-                    >
-                      Détails
-                    </button>
+              {inscriptionsList.map((ins) => (
+                <tr key={ins.id_inscription}>
+                  <td className="p-2 border">{ins.etudiant.matricule || '-'}</td>
+                  <td className="p-2 border">{ins.etudiant.prenom_etud} {ins.etudiant.nom_etud}</td>
+                  <td className="p-2 border">{ins.etudiant.email}</td>
+                  <td className="p-2 border">{ins.Annee?.libelle_annee || '-'}</td>
+                  <td className="p-2 border">{ins.Niveau?.libelle_niveau || '-'}</td>
+                  <td className="p-2 text-center border">{getPaiementIcon(ins, 1)}</td>
+                  <td className="p-2 text-center border">{getPaiementIcon(ins, 2)}</td>
+                  <td className="p-2 text-center border">
+                    {ins.statut_paiement ? <FaCheckCircle className="text-lg text-green-600" /> : <FaTimesCircle className="text-lg text-red-600" />}
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {inscriptionsList.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center p-4">Aucun étudiant trouvé</td>
+                  <td colSpan={8} className="p-4 text-center">Aucune donnée</td>
                 </tr>
               )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Modal détails (inchangé) */}
-      {modalOpen && selected && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">Détails étudiant</h2>
-            <div className="space-y-2">
-              <p><strong>Matricule :</strong> {selected.matricule || '-'}</p>
-              <p><strong>Nom :</strong> {selected.nom_etud}</p>
-              <p><strong>Prénom :</strong> {selected.prenom_etud}</p>
-              <p><strong>Email :</strong> {selected.email}</p>
-              <p><strong>Inscriptions :</strong></p>
-              {selected.Inscriptions && selected.Inscriptions.length > 0 ? (
-                <ul className="list-disc pl-5">
-                  {selected.Inscriptions.map((ins: any) => (
-                    <li key={ins.id_inscription}>
-                      Année: {ins.Annee?.libelle_annee} - Niveau: {ins.Niveau?.libelle_niveau}
-                      {ins.statut_paiement ? ' (Payé)' : ' (Impayé)'}
-                    </li>
-                  ))}
-                </ul>
-              ) : <p>Aucune inscription</p>}
-            </div>
-            <div className="flex justify-end mt-4">
-              <button onClick={() => setModalOpen(false)} className="bg-gray-300 px-4 py-1 rounded">Fermer</button>
-            </div>
-          </div>
         </div>
       )}
     </div>

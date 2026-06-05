@@ -45,9 +45,10 @@ export default function PaiementPage() {
           },
         }
       );
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
-      alert("Erreur de paiement: " + (error.response?.data?.error || "Veuillez vérifier les champs"));
+      const err = error as { response?: { data?: { error?: string } } };
+      alert("Erreur de paiement : " + (err.response?.data?.error || "Veuillez vérifier les champs"));
     } finally {
       setLoading(false);
     }

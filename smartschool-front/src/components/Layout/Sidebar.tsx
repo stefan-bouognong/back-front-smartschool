@@ -21,8 +21,6 @@ const Sidebar = () => {
     { to: '/scolarite/etudiants', icon: FiUsers, label: 'Étudiants' },
     { to: '/scolarite/inscriptions', icon: FiFileText, label: 'Inscriptions' },
     // ADMIN n'a pas accès à la saisie des notes (c'est pour les enseignants)
-    { to: '/finance/tranches', icon: FiDollarSign, label: 'Tranches' },
-    { to: '/finance/paiements', icon: FiDollarSign, label: 'Paiements' },
     { to: '/reporting/releve', icon: FiBarChart2, label: 'Relevé de notes' }, // ADMIN peut télécharger
   ];
 

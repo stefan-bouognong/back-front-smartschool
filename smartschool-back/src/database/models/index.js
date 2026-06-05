@@ -58,11 +58,11 @@ Inscription.hasMany(Note, { foreignKey: "id_inscription" });
 UE.hasMany(Note, { foreignKey: "id_UE" });
 
 // Paiement
-PayerTranche.belongsTo(Inscription, { foreignKey: "id_inscription" });
-PayerTranche.belongsTo(Tranche, { foreignKey: "id_tranche" });
+PayerTranche.belongsTo(Inscription, { foreignKey: "id_inscription", as: "Inscription" });
+PayerTranche.belongsTo(Tranche, { foreignKey: "id_tranche", as: "Tranche" });
 
-Inscription.hasMany(PayerTranche, { foreignKey: "id_inscription" });
-Tranche.hasMany(PayerTranche, { foreignKey: "id_tranche" });
+Inscription.hasMany(PayerTranche, { foreignKey: "id_inscription", as: "PayerTranches" });
+Tranche.hasMany(PayerTranche, { foreignKey: "id_tranche", as: "PayerTranches" });
 
 
 //annee
