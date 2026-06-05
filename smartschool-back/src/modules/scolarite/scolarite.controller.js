@@ -1,48 +1,41 @@
 const service = require('./scolarite.service');
+const { Etudiant, Inscription, Niveau, Annee, PayerTranche, Tranche, Departement } = require('../../database/models');
 
 exports.inscrireEtudiant = async (req, res) => {
-    try{
-        const data = await service.creerInscription(req.body);
-        res.status(201).json({message: 'Inscription reussie', data});
-
-        /*const {nom, prenom, email, filiere, niveau } = req.body;
-        if(!nom || !prenom || !email || !filiere || !niveau) {
-            return res.status(400).json({error: 'Champs manquants: nom,prenom, email, filiere,niveau requis' });
-        }
-        const result = await service.creerInscription(req.body);
-        res.status(201).json({message:'Inscription reussie', data:result});*/
-
-    } catch(err){
-    const code = err.message.includes('introuvable') || err.message.includes('invalide')?404 : 400;
-    res.status(code).json({error:err.message});
-    }
+  try {
+    const data = await service.creerInscription(req.body);
+    res.status(201).json({ message: 'Inscription reussie', data });
+  } catch (err) {
+    const code = err.message.includes('introuvable') || err.message.includes('invalide') ? 404 : 400;
+    res.status(code).json({ error: err.message });
+  }
 };
 
 exports.getAllInscriptions = async (req, res) => {
-    try{
-        const data = await service.getInscriptions(req.query);
-        res.json({total:data.length, data});
-    } catch (err){
-        res.status(500).json({error: err.message});
-    }
+  try {
+    const data = await service.getInscriptions(req.query);
+    res.json({ total: data.length, data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-exports.getInscription = async (req,res) => {
-    try{
-        const data = await service.getInscriptionById(req.params.id);
-        res.json({data});
-    }catch(err){
-        res.status(404).json({error: err.message});
-    }
+exports.getInscription = async (req, res) => {
+  try {
+    const data = await service.getInscriptionById(req.params.id);
+    res.json({ data });
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
 };
 
-exports.deleteInscription = async(req,res) => {
-    try {
-        const data = await service.supprimerInscription(req.params.id);
-        res.json(data);
-    } catch(err){
-        res.status(404).json({error:err.message});
-    }
+exports.deleteInscription = async (req, res) => {
+  try {
+    const data = await service.supprimerInscription(req.params.id);
+    res.json(data);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
 };
 
 exports.getEtudiantByMatricule = async (req, res) => {
@@ -55,15 +48,23 @@ exports.getEtudiantByMatricule = async (req, res) => {
   }
 };
 
-const { Etudiant, Inscription, Niveau, Annee } = require('../../database/models');
-
 exports.getAllEtudiants = async (req, res) => {
   try {
     const etudiants = await Etudiant.findAll({
-      include: [{ model: Inscription, include: [Niveau, Annee] }]
+      include: [
+        {
+          model: Inscription,
+          include: [
+            { model: Niveau, include: [Departement] },
+            { model: Annee },
+            { model: PayerTranche, as: 'PayerTranches', include: [{ model: Tranche, as: 'Tranche' }] }
+          ]
+        }
+      ]
     });
     res.json(etudiants);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Erreur détaillée:", err);
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 };

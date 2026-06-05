@@ -1,5 +1,7 @@
 const service = require('./finance.service');
 
+const getStatusCode = (err) => err.statusCode || 500;
+
 exports.createCharge = async (req, res) => {
   try {
     const { matricule, amount, customer_phone, id_tranche } = req.body;
@@ -9,7 +11,7 @@ exports.createCharge = async (req, res) => {
     const result = await service.initierPaiement(matricule, amount, customer_phone, id_tranche);
     res.status(200).json({ data: result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(getStatusCode(err)).json({ error: err.message });
   }
 };
 
@@ -20,7 +22,7 @@ exports.checkStatus = async (req, res) => {
     const statusData = await service.verifierStatutPaiement(reference);
     res.json(statusData);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(getStatusCode(err)).json({ error: err.message });
   }
 };
 
@@ -33,6 +35,6 @@ exports.validatePayment = async (req, res) => {
     const result = await service.validerPaiement(reference, matricule, id_tranche, montant_verse, mode_paiement);
     res.status(201).json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(getStatusCode(err)).json({ error: err.message });
   }
 };

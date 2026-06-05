@@ -112,7 +112,7 @@ async function buildPaymentSummary(inscription) {
     Tranche.findAll({ raw: true }),
     PayerTranche.findAll({
       where: { id_inscription: inscription.id_inscription },
-      include: [Tranche],
+      include: [{ model: Tranche, as: 'Tranche' }],
     }),
   ]);
   const totalExpected = tranches.reduce((sum, t) => sum + normalizeNumber(t.montant_exigible), 0);
