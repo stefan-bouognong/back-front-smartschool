@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import client from '../../api/client';
-import { FiDownload, FiSearch } from 'react-icons/fi';
+import { FiDownload } from 'react-icons/fi';
 import { getAllEtudiants} from '../../api/scolarite';
+import { PageTable } from '../../components/Common/PageTable';
 
 interface Etudiant {
   id_etudiant: number;
@@ -15,8 +16,7 @@ const Releve = () => {
   const [etudiants, setEtudiants] = useState<Etudiant[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<Etudiant | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [generating, setGenerating] = useState<number | null>(null);
 
   useEffect(() => {
     const loadEtudiants = async () => {
@@ -41,13 +41,11 @@ const Releve = () => {
   );
 
   const handleDownload = async (etudiantId: number) => {
-    setGenerating(true);
+    setGenerating(etudiantId);
     try {
-      // Appel au backend pour générer le PDF
       const response = await client.get(`/reporting/releve/${etudiantId}`, {
-        responseType: 'blob', // Important pour recevoir un fichier PDF
+        responseType: 'blob',
       });
-      // Créer un lien de téléchargement
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -64,72 +62,50 @@ const Releve = () => {
         alert('Erreur lors de la génération du relevé.');
       }
     } finally {
-      setGenerating(false);
+      setGenerating(null);
     }
   };
 
+  const columns = [
+    { key: 'matricule', label: 'Matricule', render: (row: Etudiant) => (
+      <span className="badge badge-gray">{row.matricule || '-'}</span>
+    )},
+    { key: 'nom', label: 'Nom complet', render: (row: Etudiant) => (
+      <span style={{ fontWeight: 600 }}>{row.prenom_etud} {row.nom_etud}</span>
+    )},
+    { key: 'email', label: 'Email', render: (row: Etudiant) => row.email },
+    { key: 'actions', label: 'Action', align: 'center' as const, render: (row: Etudiant) => (
+      <button
+        onClick={() => handleDownload(row.id_etudiant)}
+        disabled={generating === row.id_etudiant}
+        className="btn btn-primary btn-sm"
+        style={{ width: 'auto' }}
+      >
+        {generating === row.id_etudiant ? (
+          <>
+            <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            Génération...
+          </>
+        ) : (
+          <><FiDownload size={14} /> Relevé PDF</>
+        )}
+      </button>
+    )},
+  ];
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Relevé de notes</h1>
-      </div>
-
-      {/* Barre de recherche */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <div className="relative">
-          <FiSearch className="absolute left-3 top-3 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher par matricule, nom, prénom ou email..."
-            className="w-full border rounded pl-10 pr-3 py-2"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <p className="text-center">Chargement des étudiants...</p>
-      ) : (
-        <div className="bg-white rounded shadow overflow-x-auto">
-          <table className="min-w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border p-2">Matricule</th>
-                <th className="border p-2">Nom complet</th>
-                <th className="border p-2">Email</th>
-                <th className="border p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEtudiants.map((etudiant) => (
-                <tr key={etudiant.id_etudiant}>
-                  <td className="border p-2">{etudiant.matricule || '-'}</td>
-                  <td className="border p-2">{etudiant.prenom_etud} {etudiant.nom_etud}</td>
-                  <td className="border p-2">{etudiant.email}</td>
-                  <td className="border p-2">
-                    <button
-                      onClick={() => handleDownload(etudiant.id_etudiant)}
-                      disabled={generating}
-                      className="bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2 hover:bg-blue-700"
-                    >
-                      <FiDownload /> Télécharger relevé
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredEtudiants.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center p-4">
-                    Aucun étudiant trouvé
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    <PageTable
+      title="Relevé de notes"
+      subtitle="Téléchargez les relevés de notes des étudiants"
+      columns={columns}
+      data={filteredEtudiants}
+      loading={loading}
+      emptyMessage="Aucun étudiant trouvé"
+      searchValue={searchTerm}
+      onSearch={setSearchTerm}
+      searchPlaceholder="Rechercher par matricule, nom, prénom ou email..."
+      getKey={row => row.id_etudiant}
+    />
   );
 };
 

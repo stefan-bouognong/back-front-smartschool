@@ -3,9 +3,15 @@ import Sidebar from './Sidebar';
 
 const MainLayout = () => {
   return (
-    <div className="flex">
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <Sidebar />
-      <main className="flex-1 ml-64 min-h-screen bg-gray-100">
+      <main style={{
+        flex: 1,
+        marginLeft: '256px',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
         <Outlet />
       </main>
     </div>

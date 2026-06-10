@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getAllAnnees, createAnnee, updateAnnee, deleteAnnee, type AnneeAcademique } from '../../api/admin';
-import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
-import Sidebar from '../../components/Layout/Sidebar';
+import { getAllAnnees, createAnnee, updateAnnee, deleteAnnee } from '../../api/admin';
+import type { AnneeAcademique } from '../../api/admin';
+import { FiEdit, FiTrash2, FiPlus, FiCalendar } from 'react-icons/fi';
+import { PageTable } from '../../components/Common/PageTable';
+import { AppModal } from '../../components/Common/Modal';
 
 const Annees = () => {
   const [data, setData] = useState<AnneeAcademique[]>([]);
@@ -9,44 +11,90 @@ const Annees = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AnneeAcademique | null>(null);
   const [form, setForm] = useState<Partial<AnneeAcademique>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const load = async () => {
     setLoading(true);
-    try {
-      const res = await getAllAnnees();
-      setData(res.data);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    try { const res = await getAllAnnees(); setData(res.data); }
+    catch (err) { console.error(err); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({}); setModalOpen(true); };
-  const openEdit = (item: AnneeAcademique) => { setEditing(item); setForm(item); setModalOpen(true); };
-  const handleDelete = async (id: number) => { if (confirm('Supprimer ?')) { await deleteAnnee(id); load(); } };
+  const openCreate = () => { setEditing(null); setForm({}); setError(''); setModalOpen(true); };
+  const openEdit = (item: AnneeAcademique) => { setEditing(item); setForm({ ...item }); setError(''); setModalOpen(true); };
+  const handleDelete = async (id: number) => {
+    if (!confirm('Supprimer cette année académique ?')) return;
+    try { await deleteAnnee(id); load(); } catch { alert('Erreur'); }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); setSaving(true); setError('');
     try {
       if (editing) await updateAnnee(editing.id_annee, form);
       else await createAnnee(form);
-      setModalOpen(false);
-      load();
-    } catch (err: any) { alert(err.response?.data?.message || 'Erreur'); }
+      setModalOpen(false); load();
+    } catch (err: any) { setError(err.response?.data?.message || 'Erreur'); }
+    finally { setSaving(false); }
   };
 
-  return (
-    <div className="flex">
-        <Sidebar />
-        <div className="flex-1 ml-64">
-            <div className="p-6 bg-gray-100 min-h-screen">
-      <div className="bg-white rounded shadow p-4">
-        <div className="flex justify-between items-center mb-4"><h1 className="text-2xl font-bold">Années académiques</h1><button onClick={openCreate} className="bg-green-600 text-white px-3 py-2 rounded flex items-center gap-2"><FiPlus /> Ajouter</button></div>
-        {loading ? <p>Chargement...</p> : (
-          <div className="overflow-x-auto"><table className="min-w-full border"><thead><tr className="bg-gray-100"><th className="border p-2">ID</th><th className="border p-2">Libellé</th><th className="border p-2">Actions</th></tr></thead><tbody>{data.map(item => (<tr key={item.id_annee}><td className="border p-2">{item.id_annee}</td><td className="border p-2">{item.libelle_annee}</td><td className="border p-2"><button onClick={() => openEdit(item)} className="text-blue-600 mr-2"><FiEdit /></button><button onClick={() => handleDelete(item.id_annee)} className="text-red-600"><FiTrash2 /></button></td></tr>))}</tbody></table></div>
-        )}
-      </div>
-      {modalOpen && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white rounded p-6 w-full max-w-md"><h2 className="text-xl font-bold mb-4">{editing ? 'Modifier' : 'Ajouter'} une année</h2><form onSubmit={handleSubmit}><div className="mb-3"><label>Libellé *</label><input type="text" required className="w-full border rounded px-2 py-1" value={form.libelle_annee || ''} onChange={e => setForm({ ...form, libelle_annee: e.target.value })} /></div><div className="flex justify-end gap-2"><button type="button" onClick={() => setModalOpen(false)} className="bg-gray-300 px-4 py-1 rounded">Annuler</button><button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Enregistrer</button></div></form></div></div>)}
-    </div>
+  const columns = [
+    { key: 'id', label: '#', render: (row: AnneeAcademique) => <span className="badge badge-gray">#{row.id_annee}</span> },
+    { key: 'libelle_annee', label: 'Année académique', render: (row: AnneeAcademique) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <FiCalendar size={15} />
         </div>
-    </div>
+        <span style={{ fontWeight: 600 }}>{row.libelle_annee}</span>
+      </div>
+    )},
+    { key: 'actions', label: 'Actions', align: 'center' as const, render: (row: AnneeAcademique) => (
+      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+        <button className="btn btn-icon btn-icon-edit" onClick={() => openEdit(row)}><FiEdit size={15} /></button>
+        <button className="btn btn-icon btn-icon-delete" onClick={() => handleDelete(row.id_annee)}><FiTrash2 size={15} /></button>
+      </div>
+    )},
+  ];
+
+  return (
+    <>
+      <PageTable
+        title="Années académiques"
+        subtitle="Gérez les années académiques"
+        columns={columns}
+        data={data}
+        loading={loading}
+        emptyMessage="Aucune année académique"
+        getKey={row => row.id_annee}
+        actions={<button className="btn btn-success" onClick={openCreate}><FiPlus size={16} /> Ajouter</button>}
+      />
+
+      <AppModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Modifier l\'année' : 'Nouvelle année académique'}
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={() => setModalOpen(false)}>Annuler</button>
+            <button className="btn btn-primary" form="annee-form" type="submit" disabled={saving}>
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </>
+        }
+      >
+        {error && <div className="alert alert-error">{error}</div>}
+        <form id="annee-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Libellé <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <input
+              type="text" required className="form-control"
+              value={form.libelle_annee || ''}
+              onChange={e => setForm({ ...form, libelle_annee: e.target.value })}
+              placeholder="Ex: 2024-2025"
+            />
+          </div>
+        </form>
+      </AppModal>
+    </>
   );
 };
 
