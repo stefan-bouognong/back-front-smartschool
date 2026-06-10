@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAllEtudiants, type Etudiant, type Inscription } from '../../api/scolarite';
-import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FiCheck, FiX } from 'react-icons/fi';
+import { PageTable } from '../../components/Common/PageTable';
 
 const Etudiants = () => {
   const [etudiants, setEtudiants] = useState<Etudiant[]>([]);
@@ -42,7 +43,11 @@ const Etudiants = () => {
   const getPaiementIcon = (inscription: Inscription, trancheId: number) => {
     const tranches = inscription.PayerTranches ?? [];
     const paye = tranches.some(pt => Number(pt.id_tranche) === trancheId);
-    return paye ? <FaCheckCircle className="text-lg text-green-600" /> : <FaTimesCircle className="text-lg text-red-600" />;
+    return paye ? (
+      <span className="badge badge-success"><FiCheck /> Payé</span>
+    ) : (
+      <span className="badge badge-danger"><FiX /> Impayé</span>
+    );
   };
 
   // Aplatir les inscriptions pour afficher une ligne par inscription
@@ -53,64 +58,34 @@ const Etudiants = () => {
     }))
   );
 
+  const columns = [
+    { key: 'matricule', label: 'Matricule', render: (row: any) => <span className="badge badge-gray">{row.etudiant.matricule || '-'}</span> },
+    { key: 'nom', label: 'Nom complet', render: (row: any) => <span style={{ fontWeight: 600 }}>{row.etudiant.prenom_etud} {row.etudiant.nom_etud}</span> },
+    { key: 'email', label: 'Email', render: (row: any) => row.etudiant.email },
+    { key: 'annee', label: 'Année académique', render: (row: any) => row.Annee?.libelle_annee || '-' },
+    { key: 'niveau', label: 'Niveau', render: (row: any) => <span className="badge badge-primary">{row.Niveau?.libelle_niveau || '-'}</span> },
+    { key: 'tranche1', label: '1ʳᵉ tranche', align: 'center' as const, render: (row: any) => getPaiementIcon(row, 1) },
+    { key: 'tranche2', label: '2ᵉ tranche', align: 'center' as const, render: (row: any) => getPaiementIcon(row, 2) },
+    { key: 'totalite', label: 'Totalité', align: 'center' as const, render: (row: any) => row.statut_paiement ? (
+      <span className="badge badge-success"><FiCheck /> Payé</span>
+    ) : (
+      <span className="badge badge-danger"><FiX /> Impayé</span>
+    ) },
+  ];
+
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Étudiants et inscriptions</h1>
-      </div>
-
-      <div className="p-4 mb-6 bg-white rounded shadow">
-        <input
-          type="text"
-          placeholder="Rechercher par matricule, nom, prénom ou email..."
-          className="w-full px-3 py-2 border rounded"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {loading ? (
-        <p className="text-center">Chargement...</p>
-      ) : (
-        <div className="overflow-x-auto bg-white rounded shadow">
-          <table className="min-w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 border">Matricule</th>
-                <th className="p-2 border">Nom complet</th>
-                <th className="p-2 border">Email</th>
-                <th className="p-2 border">Année académique</th>
-                <th className="p-2 border">Niveau</th>
-                <th className="p-2 border">1ʳᵉ tranche</th>
-                <th className="p-2 border">2ᵉ tranche</th>
-                <th className="p-2 border">Totalité</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inscriptionsList.map((ins) => (
-                <tr key={ins.id_inscription}>
-                  <td className="p-2 border">{ins.etudiant.matricule || '-'}</td>
-                  <td className="p-2 border">{ins.etudiant.prenom_etud} {ins.etudiant.nom_etud}</td>
-                  <td className="p-2 border">{ins.etudiant.email}</td>
-                  <td className="p-2 border">{ins.Annee?.libelle_annee || '-'}</td>
-                  <td className="p-2 border">{ins.Niveau?.libelle_niveau || '-'}</td>
-                  <td className="p-2 text-center border">{getPaiementIcon(ins, 1)}</td>
-                  <td className="p-2 text-center border">{getPaiementIcon(ins, 2)}</td>
-                  <td className="p-2 text-center border">
-                    {ins.statut_paiement ? <FaCheckCircle className="text-lg text-green-600" /> : <FaTimesCircle className="text-lg text-red-600" />}
-                  </td>
-                </tr>
-              ))}
-              {inscriptionsList.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="p-4 text-center">Aucune donnée</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    <PageTable
+      title="Étudiants et inscriptions"
+      subtitle="Consultez la liste des étudiants et le statut de leurs paiements"
+      columns={columns}
+      data={inscriptionsList}
+      loading={loading}
+      emptyMessage="Aucune inscription trouvée"
+      searchValue={searchTerm}
+      onSearch={setSearchTerm}
+      searchPlaceholder="Rechercher par matricule, nom, prénom ou email..."
+      getKey={row => row.id_inscription}
+    />
   );
 };
 

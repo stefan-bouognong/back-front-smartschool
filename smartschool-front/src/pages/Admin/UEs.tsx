@@ -1,55 +1,129 @@
 import { useState, useEffect } from 'react';
-import { getAllUEs, createUE, updateUE, deleteUE, getAllNiveaux, type  UE, type Niveau } from '../../api/admin';
+import { getAllUEs, createUE, updateUE, deleteUE, getAllNiveaux } from '../../api/admin';
+import type { UE, Niveau } from '../../api/admin';
 import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
-import Sidebar from '../../components/Layout/Sidebar';
+import { PageTable } from '../../components/Common/PageTable';
+import { AppModal } from '../../components/Common/Modal';
 
 const UEs = () => {
   const [data, setData] = useState<UE[]>([]);
   const [niveaux, setNiveaux] = useState<Niveau[]>([]);
+  const [filtered, setFiltered] = useState<UE[]>([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<UE | null>(null);
   const [form, setForm] = useState<Partial<UE>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
       const [ueRes, nivRes] = await Promise.all([getAllUEs(), getAllNiveaux()]);
-      setData(ueRes.data);
-      setNiveaux(nivRes.data);
+      setData(ueRes.data); setFiltered(ueRes.data); setNiveaux(nivRes.data);
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({}); setModalOpen(true); };
-  const openEdit = (item: UE) => { setEditing(item); setForm(item); setModalOpen(true); };
-  const handleDelete = async (id: number) => { if (confirm('Supprimer ?')) { await deleteUE(id); load(); } };
+  useEffect(() => {
+    if (!search.trim()) { setFiltered(data); return; }
+    const t = search.toLowerCase();
+    setFiltered(data.filter(u => u.code_UE?.toLowerCase().includes(t) || u.libelle_UE?.toLowerCase().includes(t)));
+  }, [search, data]);
+
+  const getNiveau = (id?: number) => niveaux.find(n => n.id_niveau === id)?.libelle_niveau || '—';
+
+  const openCreate = () => { setEditing(null); setForm({}); setError(''); setModalOpen(true); };
+  const openEdit = (item: UE) => { setEditing(item); setForm({ ...item }); setError(''); setModalOpen(true); };
+  const handleDelete = async (id: number) => {
+    if (!confirm('Supprimer cette UE ?')) return;
+    try { await deleteUE(id); load(); } catch { alert('Erreur'); }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); setSaving(true); setError('');
     try {
       if (editing) await updateUE(editing.id_UE, form);
       else await createUE(form);
-      setModalOpen(false);
-      load();
-    } catch (err: any) { alert(err.response?.data?.message || 'Erreur'); }
+      setModalOpen(false); load();
+    } catch (err: any) { setError(err.response?.data?.message || 'Erreur'); }
+    finally { setSaving(false); }
   };
 
-  return (
-    <div className="flex">
-        <Sidebar />
-        <div className="flex-1 ml-64">
-                <div className="p-6 bg-gray-100 min-h-screen">
-      <div className="bg-white rounded shadow p-4">
-        <div className="flex justify-between items-center mb-4"><h1 className="text-2xl font-bold">Unités d'Enseignement</h1><button onClick={openCreate} className="bg-green-600 text-white px-3 py-2 rounded flex items-center gap-2"><FiPlus /> Ajouter</button></div>
-        {loading ? <p>Chargement...</p> : (
-          <div className="overflow-x-auto"><table className="min-w-full border"><thead><tr className="bg-gray-100"><th className="border p-2">ID</th><th className="border p-2">Code</th><th className="border p-2">Libellé</th><th className="border p-2">Crédits ECTS</th><th className="border p-2">Niveau</th><th className="border p-2">Actions</th></tr></thead><tbody>{data.map(item => (<tr key={item.id_UE}><td className="border p-2">{item.id_UE}</td><td className="border p-2">{item.code_UE}</td><td className="border p-2">{item.libelle_UE}</td><td className="border p-2">{item.credits_ECTS}</td><td className="border p-2">{niveaux.find(n => n.id_niveau === item.id_niveau)?.libelle_niveau || item.id_niveau}</td><td className="border p-2"><button onClick={() => openEdit(item)} className="text-blue-600 mr-2"><FiEdit /></button><button onClick={() => handleDelete(item.id_UE)} className="text-red-600"><FiTrash2 /></button></td></tr>))}</tbody></table></div>
-        )}
+  const columns = [
+    { key: 'code', label: 'Code', render: (row: UE) => (
+      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--primary)', background: 'var(--primary-bg)', padding: '2px 8px', borderRadius: '4px' }}>{row.code_UE}</span>
+    )},
+    { key: 'libelle_UE', label: 'Intitulé', render: (row: UE) => <span style={{ fontWeight: 500 }}>{row.libelle_UE}</span> },
+    { key: 'credits', label: 'ECTS', align: 'center' as const, render: (row: UE) => (
+      <span className="badge badge-warning">{row.credits_ECTS} crédits</span>
+    )},
+    { key: 'niveau', label: 'Niveau', render: (row: UE) => (
+      <span className="badge badge-primary">{getNiveau(row.id_niveau)}</span>
+    )},
+    { key: 'actions', label: 'Actions', align: 'center' as const, render: (row: UE) => (
+      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+        <button className="btn btn-icon btn-icon-edit" onClick={() => openEdit(row)}><FiEdit size={15} /></button>
+        <button className="btn btn-icon btn-icon-delete" onClick={() => handleDelete(row.id_UE)}><FiTrash2 size={15} /></button>
       </div>
-      {modalOpen && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white rounded p-6 w-full max-w-md"><h2 className="text-xl font-bold mb-4">{editing ? 'Modifier' : 'Ajouter'} une UE</h2><form onSubmit={handleSubmit}><div className="mb-3"><label>Code *</label><input type="text" required className="w-full border rounded px-2 py-1" value={form.code_UE || ''} onChange={e => setForm({ ...form, code_UE: e.target.value })} /></div><div className="mb-3"><label>Libellé *</label><input type="text" required className="w-full border rounded px-2 py-1" value={form.libelle_UE || ''} onChange={e => setForm({ ...form, libelle_UE: e.target.value })} /></div><div className="mb-3"><label>Crédits ECTS</label><input type="number" className="w-full border rounded px-2 py-1" value={form.credits_ECTS || ''} onChange={e => setForm({ ...form, credits_ECTS: parseInt(e.target.value) })} /></div><div className="mb-3"><label>Niveau *</label><select required className="w-full border rounded px-2 py-1" value={form.id_niveau || ''} onChange={e => setForm({ ...form, id_niveau: parseInt(e.target.value) })}><option value="">Sélectionner</option>{niveaux.map(n => <option key={n.id_niveau} value={n.id_niveau}>{n.libelle_niveau}</option>)}</select></div><div className="flex justify-end gap-2"><button type="button" onClick={() => setModalOpen(false)} className="bg-gray-300 px-4 py-1 rounded">Annuler</button><button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Enregistrer</button></div></form></div></div>)}
-    </div>
-        </div>
+    )},
+  ];
 
-    </div>
+  return (
+    <>
+      <PageTable
+        title="Unités d'Enseignement"
+        subtitle="Gérez les UE et leurs crédits ECTS"
+        columns={columns}
+        data={filtered}
+        loading={loading}
+        emptyMessage="Aucune UE trouvée"
+        searchValue={search}
+        onSearch={setSearch}
+        searchPlaceholder="Rechercher par code ou intitulé..."
+        getKey={row => row.id_UE}
+        actions={<button className="btn btn-success" onClick={openCreate}><FiPlus size={16} /> Ajouter</button>}
+      />
+
+      <AppModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Modifier l\'UE' : 'Nouvelle UE'}
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={() => setModalOpen(false)}>Annuler</button>
+            <button className="btn btn-primary" form="ue-form" type="submit" disabled={saving}>
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </>
+        }
+      >
+        {error && <div className="alert alert-error">{error}</div>}
+        <form id="ue-form" onSubmit={handleSubmit}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1rem' }}>
+            <div className="form-group">
+              <label className="form-label">Code UE <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <input type="text" required className="form-control" value={form.code_UE || ''} onChange={e => setForm({ ...form, code_UE: e.target.value })} placeholder="Ex: INF301" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Crédits ECTS</label>
+              <input type="number" className="form-control" value={form.credits_ECTS || ''} onChange={e => setForm({ ...form, credits_ECTS: parseInt(e.target.value) })} placeholder="3" min="1" max="30" />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Intitulé <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <input type="text" required className="form-control" value={form.libelle_UE || ''} onChange={e => setForm({ ...form, libelle_UE: e.target.value })} placeholder="Ex: Bases de données avancées" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Niveau <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <select required className="form-control" value={form.id_niveau || ''} onChange={e => setForm({ ...form, id_niveau: parseInt(e.target.value) })}>
+              <option value="">Sélectionner un niveau</option>
+              {niveaux.map(n => <option key={n.id_niveau} value={n.id_niveau}>{n.libelle_niveau}</option>)}
+            </select>
+          </div>
+        </form>
+      </AppModal>
+    </>
   );
 };
 
