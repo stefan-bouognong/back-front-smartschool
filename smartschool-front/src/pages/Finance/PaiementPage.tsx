@@ -47,7 +47,13 @@ export default function PaiementPage() {
         }
       );
     } catch (err: any) {
-      setError("Erreur de paiement : " + (err.response?.data?.error || "Veuillez vérifier les champs"));
+      console.error("Erreur détaillée lors du paiement:", err);
+      console.error("Données d'erreur du backend:", err.response?.data);
+      
+      const backendError = err.response?.data?.error;
+      const errorMessage = backendError ? backendError : (err.message || "Veuillez vérifier les champs");
+      
+      setError("Erreur de paiement : " + errorMessage);
     } finally {
       setLoading(false);
     }

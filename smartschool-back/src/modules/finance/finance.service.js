@@ -1,5 +1,8 @@
 const axios = require('axios');
+const https = require('https');
 const { Etudiant, Inscription, PayerTranche, Tranche } = require('../../database/models');
+
+const httpsAgent = new https.Agent({ family: 4 });
 
 const CAMPAY_BASE_URL = process.env.CAMPAY_BASE_URL || 'https://demo.campay.net/api';
 const CAMPAY_API_KEY = process.env.CAMPAY_API_KEY;
@@ -62,8 +65,13 @@ exports.initierPaiement = async (matricule, amount, customer_phone, id_tranche) 
       external_reference
     },
     {
-      headers: { 'Content-Type': 'application/json', Authorization: `Token ${CAMPAY_API_KEY}` },
-      timeout: 15000
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Token ${CAMPAY_API_KEY}`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      timeout: 15000,
+      httpsAgent
     }
   );
   return { reference: response.data.reference, external_reference, id_inscription: inscription.id_inscription };
@@ -71,7 +79,11 @@ exports.initierPaiement = async (matricule, amount, customer_phone, id_tranche) 
 
 exports.verifierStatutPaiement = async (reference) => {
   const response = await axios.get(`${CAMPAY_BASE_URL}/transaction/${reference}/`, {
-    headers: { Authorization: `Token ${CAMPAY_API_KEY}` }
+    headers: { 
+      'Authorization': `Token ${CAMPAY_API_KEY}`,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    },
+    httpsAgent
   });
   return response.data;
 };

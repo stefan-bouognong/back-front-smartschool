@@ -11,7 +11,17 @@ exports.createCharge = async (req, res) => {
     const result = await service.initierPaiement(matricule, amount, customer_phone, id_tranche);
     res.status(200).json({ data: result });
   } catch (err) {
-    res.status(getStatusCode(err)).json({ error: err.message });
+    console.error('Erreur détaillée dans createCharge:', err.response?.data || err);
+    
+    // Si c'est une erreur Axios (ex: Campay)
+    if (err.isAxiosError && err.response) {
+      const campayError = err.response.data;
+      const errorMsg = typeof campayError === 'string' ? campayError : JSON.stringify(campayError);
+      return res.status(err.response.status || 500).json({ error: `Erreur API Paiement: ${errorMsg}` });
+    }
+    
+    const finalErrorMsg = err.message || err.code || "Erreur réseau inconnue";
+    res.status(getStatusCode(err)).json({ error: finalErrorMsg });
   }
 };
 
