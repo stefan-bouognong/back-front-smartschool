@@ -115,7 +115,7 @@ export default function PaiementPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Numéro de téléphone (Mobile Money)</label>
+              <label className="form-label">Numéro de téléphone </label>
               <div style={{ position: 'relative' }}>
                 <FiPhone size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input

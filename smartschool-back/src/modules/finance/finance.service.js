@@ -14,6 +14,26 @@ class BusinessError extends Error {
   }
 }
 
+/**
+ * Normalise un numéro de téléphone camerounais au format international (237XXXXXXXXX).
+ * Accepte : 237XXXXXXXXX, 6XXXXXXXX, 06XXXXXXXX
+ * Opérateurs supportés : Orange (69x, 65x), MTN (67x, 68x, 650)
+ */
+const normaliserTelephone = (phone) => {
+  if (!phone) throw new BusinessError('Numéro de téléphone requis');
+  // Supprimer espaces, tirets, parenthèses
+  let cleaned = String(phone).replace(/[\s\-\(\)\+]/g, '');
+  // Si commence par 00237, remplacer par 237
+  if (cleaned.startsWith('00237')) cleaned = '237' + cleaned.slice(5);
+  // Si commence par 237 et a 12 chiffres → déjà au bon format
+  if (/^237[0-9]{9}$/.test(cleaned)) return cleaned;
+  // Si commence par 6 ou 5 et a 9 chiffres → ajouter 237
+  if (/^[65][0-9]{8}$/.test(cleaned)) return '237' + cleaned;
+  // Si commence par 06 ou 05 et a 10 chiffres → ajouter 237
+  if (/^0[65][0-9]{8}$/.test(cleaned)) return '237' + cleaned.slice(1);
+  throw new BusinessError(`Format de téléphone invalide : "${phone}". Utilisez le format 237XXXXXXXXX ou 6XXXXXXXXX`);
+};
+
 const getInscriptionEtudiant = async (matricule) => {
   const etudiant = await Etudiant.findOne({ where: { matricule } });
   if (!etudiant) throw new BusinessError('Étudiant introuvable');
@@ -54,13 +74,17 @@ const verifierEligibilitePaiement = async (matricule, id_tranche) => {
 exports.initierPaiement = async (matricule, amount, customer_phone, id_tranche) => {
   const { inscription, tranche } = await verifierEligibilitePaiement(matricule, id_tranche);
 
+  // Normaliser le numéro (critique pour Orange Money)
+  const phoneNormalized = normaliserTelephone(customer_phone);
+  console.log(`[Finance] Initiation paiement pour ${phoneNormalized} (original: ${customer_phone})`);
+
   const external_reference = `SMARTSCHOOL_${Date.now()}`;
   const response = await axios.post(
     `${CAMPAY_BASE_URL}/collect/`,
     {
       amount: String(amount),
       currency: 'XAF',
-      from: customer_phone,
+      from: phoneNormalized,
       description: `Paiement tranche ${tranche.libelle_tranche} - ${matricule}`,
       external_reference
     },
@@ -74,7 +98,9 @@ exports.initierPaiement = async (matricule, amount, customer_phone, id_tranche) 
       httpsAgent
     }
   );
-  return { reference: response.data.reference, external_reference, id_inscription: inscription.id_inscription };
+
+  console.log(`[Finance] CamPay collect response:`, response.data);
+  return { reference: response.data.reference, external_reference, id_inscription: inscription.id_inscription, phone: phoneNormalized };
 };
 
 exports.verifierStatutPaiement = async (reference) => {
@@ -85,6 +111,7 @@ exports.verifierStatutPaiement = async (reference) => {
     },
     httpsAgent
   });
+  console.log(`[Finance] Status check for ${reference}:`, JSON.stringify(response.data));
   return response.data;
 };
 
