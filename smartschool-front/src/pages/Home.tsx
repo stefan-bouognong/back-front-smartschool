@@ -149,7 +149,8 @@ const Home = () => {
             <FiCreditCard size={20} /> Payer ses DU
           </Link>
           
-          <button
+          <Link
+            to="/recu"
             style={{
               background: 'white',
               color: '#0f172a',
@@ -164,6 +165,7 @@ const Home = () => {
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(15,23,42,0.05)',
               transition: 'all 0.2s',
+              textDecoration: 'none',
             }}
             onMouseEnter={e => {
               e.currentTarget.style.transform = 'translateY(-2px)';
@@ -177,7 +179,7 @@ const Home = () => {
             }}
           >
             <FiDownload size={20} /> Télécharger son Reçu
-          </button>
+          </Link>
         </div>
       </main>
 

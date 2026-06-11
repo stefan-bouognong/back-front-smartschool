@@ -1,4 +1,5 @@
 const service = require('./finance.service');
+const receiptService = require('./receipt.service');
 
 const getStatusCode = (err) => err.statusCode || 500;
 
@@ -45,6 +46,28 @@ exports.validatePayment = async (req, res) => {
     const result = await service.validerPaiement(reference, matricule, id_tranche, montant_verse, mode_paiement);
     res.status(201).json(result);
   } catch (err) {
+    res.status(getStatusCode(err)).json({ error: err.message });
+  }
+};
+
+exports.downloadReceipt = async (req, res) => {
+  try {
+    const { matricule } = req.params;
+    if (!matricule) {
+      return res.status(400).json({ error: 'Matricule requis' });
+    }
+
+    const { doc, nomComplet, matricule: mat } = await receiptService.generateReceipt(matricule);
+
+    // Nom du fichier de sortie
+    const filename = `Recu_${mat}_${nomComplet.replace(/\s+/g, '_')}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+
+    doc.pipe(res);
+  } catch (err) {
+    console.error('Erreur génération reçu:', err);
     res.status(getStatusCode(err)).json({ error: err.message });
   }
 };

@@ -23,6 +23,7 @@ import Releve from './pages/Reporting/Releve';
 import PaiementPage from "./pages/Finance/PaiementPage";
 import PaiementWaiting from "./pages/Finance/PaiementWaiting";
 import PaiementSuccess from "./pages/Finance/PaiementSuccess";
+import ReceiptDownload from "./pages/Finance/ReceiptDownload";
 
 
 // ... imports
@@ -39,6 +40,7 @@ function App() {
           <Route path="/paiement" element={<PaiementPage />} />
           <Route path="/paiement/attente/:reference" element={<PaiementWaiting />} />
           <Route path="/paiement/succes" element={<PaiementSuccess />} />
+          <Route path="/recu" element={<ReceiptDownload />} />
 
           {/* Routes protégées avec layout principal */}
           <Route element={<PrivateRoute />}>
