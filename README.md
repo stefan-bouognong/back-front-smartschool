@@ -19,6 +19,7 @@ DB_PORT=3306
 JWT_SECRET=your_jwt_secret_key
 
 
+la branche a jour du projet est "stefan-test"
 
 
 
